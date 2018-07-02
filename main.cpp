@@ -303,10 +303,14 @@ int main(int argc, char** argv)
           printf("Failed to allocate array!\n");
       }
 
-      // Fill pattern only with possibly malicious patterns
+      // Fill pattern list with real usernames
       for (int i = 0; i < p_size2; i++) {
-        std::copy (credentialsVector.at(i).mUsername.begin(), credentialsVector.at(i).mUsername.end(), pattern2[i]);
-        pattern2[i][m2] = '\0';
+        // Don't copy over though the username associated with the current source OR destination ip
+        if (it.mSource_ip != credentialsVector.at(i).mSource_ip &&
+            it.mDest_ip != credentialsVector.at(i).mSource_ip) {
+          std::copy (credentialsVector.at(i).mUsername.begin(), credentialsVector.at(i).mUsername.end(), pattern2[i]);
+          pattern2[i][m2] = '\0';
+        }
       }
 
       if ( n2 < it.mPayload.end() - it.mPayload.begin()) {
@@ -326,7 +330,7 @@ int main(int argc, char** argv)
 
       int matches = multiac(pattern2, m2, text2, n2, p_size2, alphabet2);
       if (matches > 0) {
-        cout << "Attack detected, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", " << "Antonis" << endl;
+        cout << "Attack detected, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << endl;
       }
 
       free(text2);
