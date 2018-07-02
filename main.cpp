@@ -1,11 +1,49 @@
+// g++ -std=c++11 -o csvParser csvParser.cpp  && ./csvParser
+
 extern "C" {
 #include "ac/ac.h"
 }
 
 #include <cstring>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
+#include <vector>
 
+using std::cout;
+using std::endl;
+using std::ifstream;
 using std::string;
+using std::stringstream;
+using std::vector;
+
+struct Frame {
+  Frame(string id, string timestamp, string source_ip, string source_mac, string dest_ip, string dest_mac,
+        string length, string protocol, string source_port, string dest_port, string payload)
+    : mId(id),
+      mTimestamp(timestamp),
+      mSource_ip(source_ip),
+      mSource_mac(source_mac),
+      mDest_ip(dest_ip),
+      mDest_mac(dest_mac),
+      mLength(length),
+      mProtocol(protocol),
+      mSource_port(source_port),
+      mDest_port(dest_port),
+      mPayload(payload){};
+  string mId;
+  string mTimestamp;
+  string mSource_ip;
+  string mSource_mac;
+  string mDest_ip;
+  string mDest_mac;
+  string mLength;
+  string mProtocol;
+  string mSource_port;
+  string mDest_port;
+  string mPayload;
+};
 
 void usage(void)
 {
@@ -67,8 +105,80 @@ void multiac(unsigned char** pattern, int m, unsigned char* text, int n, int p_s
   printf("search_ac matches \t%i\n", matches);
 }
 
+void csvParser(const string& filename)
+{
+  ifstream infile(filename);
+  string line = "";
+  // Parse each new line
+  vector<Frame> frameVector;
+  while (getline(infile, line, '\n')) {
+    stringstream strstr(line);
+    // cout << line << endl; return 1;
+
+    // Parse the first 10 comma-delimited entries of each line
+    vector<string> wordVector(11);
+    for (int i = 0; i < wordVector.size(); i++) {
+      string word = "";
+      if (i != wordVector.size() - 1) {
+        getline(strstr, word, ',');
+      } else {
+        // The last entry is the payload, should be copied as is to frame
+        getline(strstr, word);
+      }
+      wordVector.at(i) = word;
+    }
+
+    // Store the entries to a frame and push it to a vector
+    frameVector.push_back(Frame(wordVector.at(0), wordVector.at(1), wordVector.at(2), wordVector.at(3),
+                                wordVector.at(4), wordVector.at(5), wordVector.at(6), wordVector.at(7),
+                                wordVector.at(8), wordVector.at(9), wordVector.at(10)));
+  }
+
+  // Statistics!
+  cout << "Parsed " << frameVector.size() << " frames" << endl;
+
+  int udpCounter = 0;
+  int tcpCounter = 0;
+  int icmpCounter = 0;
+  int arpCounter = 0;
+  int unknownCounter = 0;
+  for (auto& i : frameVector) {
+    if (i.mProtocol == "UDP") {
+      udpCounter++;
+    } else if (i.mProtocol == "TCP") {
+      tcpCounter++;
+    } else if (i.mProtocol == "ICMP") {
+      icmpCounter++;
+    } else if (i.mProtocol == "ARP") {
+      arpCounter++;
+    } else {
+      unknownCounter++;
+    }
+  }
+  cout << "Parsed " << udpCounter << " UDP " << tcpCounter << " TCP " << icmpCounter << " ICMP " << arpCounter
+       << " ARP and " << unknownCounter << " unknown protocol messages" << endl;
+
+  double size = 0;
+  for (auto& i : frameVector) {
+    if (i.mProtocol == "TCP") {
+      size += i.mPayload.length();
+    }
+  }
+
+  cout << "Average payload size of all TCP packets: " << size / tcpCounter << " bytes" << endl;
+
+  // for (auto& i : frameVector) {
+  // 	if (i.mProtocol == "TCP" && std::stod(i.mLength) > 96) {
+  // 		cout << i.mId << " " << i.mLength << " " << i.mSource_port << " " << i.mDest_port << " " << i.mPayload << endl <<
+  // endl;
+  // 	}
+  // }
+}
+
 int main(int argc, char** argv)
 {
+  csvParser("../charis2.csv");
+
   int m = 0, p_size = 0, n = 0, alphabet = 0, B = 3, create_data = 0;
 
   // Scan command line arguments
@@ -133,7 +243,6 @@ int main(int argc, char** argv)
   if (strcmp(argv[1], "ac") == 0) {
     multiac(pattern, m, text, n, p_size, alphabet);
   }
-
 
   free(text);
 
