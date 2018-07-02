@@ -266,8 +266,8 @@ int main(int argc, char** argv)
   free(pattern);
 
   vector<Credentials> credentialsVector;
-  credentialsVector.push_back(Credentials("160.40.51.245", "Antonis"));
-  credentialsVector.push_back(Credentials("160.40.51.244", "Giorgos"));
+  credentialsVector.push_back(Credentials("160.40.51.245", "skype"));
+  credentialsVector.push_back(Credentials("160.40.51.244", "osoft"));
 
 
   // Deep packet inspection
@@ -304,17 +304,10 @@ int main(int argc, char** argv)
       }
 
       // Fill pattern only with possibly malicious patterns
-      pattern2[0][0] = 's';
-      pattern2[0][1] = 'k';
-      pattern2[0][2] = 'y';
-      pattern2[0][3] = 'p';
-      pattern2[0][4] = 'e';
-
-      pattern2[1][0] = 'o';
-      pattern2[1][1] = 's';
-      pattern2[1][2] = 'o';
-      pattern2[1][3] = 'f';
-      pattern2[1][4] = 't';
+      for (int i = 0; i < p_size2; i++) {
+        std::copy (credentialsVector.at(i).mUsername.begin(), credentialsVector.at(i).mUsername.end(), pattern2[i]);
+        pattern2[i][m2] = '\0';
+      }
 
       if ( n2 < it.mPayload.end() - it.mPayload.begin()) {
         cout << "ERRRORRRRRR" << endl;
