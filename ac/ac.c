@@ -187,7 +187,7 @@ unsigned int search_ac ( unsigned char *text, int n, struct ac_table *table ) {
 
 		if ( r->output != NULL ) {
 			matches++;
-			//printf("match of %i at %i\n", r->keywordline, column);
+			printf("match of %i at %i\n", r->keywordline, column);
 		}
 	}
 
