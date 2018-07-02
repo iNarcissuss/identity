@@ -1,5 +1,4 @@
-#include "../smatcher.h"
-
+#include "ac.h"
 #include "list.h"
 
 /// free an AC table from a given startnode (recursively)
@@ -28,7 +27,7 @@ void ac_init ( struct ac_table *g, int alphabet ) {
 	g->zerostate = malloc ( sizeof ( struct ac_state ) );
 
 	if ( !g->zerostate )
-		fail ( "Could not allocate memory\n" );
+		printf( "Could not allocate memory\n" );
 
 	g->idcounter = 1;
 	g->zerostate->id = 0;
@@ -129,7 +128,7 @@ void ac_addstring ( struct ac_table *g, unsigned int i, unsigned char *string, i
 			next = malloc ( sizeof ( struct ac_state ) );
 
 			if ( !next )
-				fail ( "Could not allocate memory\n" );
+				printf( "Could not allocate memory\n" );
 
 			next->next = ( struct ac_state ** ) malloc ( alphabet * sizeof ( struct ac_state * ) );
 
@@ -206,7 +205,7 @@ struct ac_table *preproc_ac ( unsigned char **pattern, int m, int p_size, int al
 	table = malloc ( sizeof ( struct ac_table ) );
 
 	if ( !table )
-		fail ( "Could not initialize table\n" );
+		printf( "Could not initialize table\n" );
 
 	ac_init ( table, alphabet );
 
