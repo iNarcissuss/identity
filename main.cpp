@@ -45,6 +45,11 @@ struct Frame {
   string mPayload;
 };
 
+class Credentials {
+	string mSource_ip;
+	string mUsername;
+};
+
 void usage(void)
 {
   printf(
@@ -94,7 +99,7 @@ void load_files(unsigned char** pattern, unsigned char* text, int m, int n, cons
   fclose(fp);
 }
 
-void multiac(unsigned char** pattern, int m, unsigned char* text, int n, int p_size, int alphabet)
+int multiac(unsigned char** pattern, int m, unsigned char* text, int n, int p_size, int alphabet)
 {
   struct ac_table* table = preproc_ac(pattern, m, p_size, alphabet);
 
@@ -102,15 +107,17 @@ void multiac(unsigned char** pattern, int m, unsigned char* text, int n, int p_s
 
   free_ac(table, alphabet);
 
-  printf("search_ac matches \t%i\n", matches);
+  //printf("search_ac matches \t%i\n", matches);
+
+  return matches;
 }
 
-void csvParser(const string& filename)
+void csvParser(vector<Frame>& frameVector, const string& filename)
 {
   ifstream infile(filename);
   string line = "";
+
   // Parse each new line
-  vector<Frame> frameVector;
   while (getline(infile, line, '\n')) {
     stringstream strstr(line);
     // cout << line << endl; return 1;
@@ -169,7 +176,8 @@ void csvParser(const string& filename)
 
   // for (auto& i : frameVector) {
   // 	if (i.mProtocol == "TCP" && std::stod(i.mLength) > 96) {
-  // 		cout << i.mId << " " << i.mLength << " " << i.mSource_port << " " << i.mDest_port << " " << i.mPayload << endl <<
+  // 		cout << i.mId << " " << i.mLength << " " << i.mSource_port << " " << i.mDest_port << " " << i.mPayload << endl
+  // <<
   // endl;
   // 	}
   // }
@@ -177,7 +185,8 @@ void csvParser(const string& filename)
 
 int main(int argc, char** argv)
 {
-  csvParser("../charis2.csv");
+  vector<Frame> frameVector;
+  csvParser(frameVector, "../charis2.csv");
 
   int m = 0, p_size = 0, n = 0, alphabet = 0, B = 3, create_data = 0;
 
@@ -227,8 +236,9 @@ int main(int argc, char** argv)
 
   unsigned char** pattern = (unsigned char**)malloc(p_size * sizeof(unsigned char*));
 
-  if (pattern == NULL)
+  if (pattern == NULL) {
     printf("Failed to allocate array!\n");
+  }
 
   for (int i = 0; i < p_size; i++) {
     pattern[i] = (unsigned char*)malloc(m * sizeof(unsigned char));
@@ -252,5 +262,84 @@ int main(int argc, char** argv)
 
   free(pattern);
 
+  vector<Credentials> credentialsVector;
+
+
+  // Deep packet inspection
+  // For every packet in the payload
+  cout << "Inspecting TCP packets with actual payload" << endl << endl;
+
+  cout << "Frame ID, Source IP, Destination IP, Username" << endl;
+  for (auto& it : frameVector) {
+    // Inspect only TCP packets with actual payload
+    if (it.mProtocol == "TCP" && std::stod(it.mLength) > 96) {
+      const int m2 = 5;
+      const int alphabet2 = 256;
+      const int n2 = it.mPayload.length();
+      const int p_size2 = 2;
+
+      // Allocate text and pattern
+      unsigned char* text2 = (unsigned char*)malloc(sizeof(unsigned char) * n2);
+
+      if (text2 == NULL) {
+        printf("Failed to allocate array\n");
+      }
+
+      unsigned char** pattern2 = (unsigned char**)malloc(p_size2 * sizeof(unsigned char*));
+
+      if (pattern2 == NULL) {
+        printf("Failed to allocate array!\n");
+      }
+
+      for (int i = 0; i < p_size2; i++) {
+        pattern2[i] = (unsigned char*)malloc(m2 * sizeof(unsigned char));
+
+        if (pattern2[i] == NULL)
+          printf("Failed to allocate array!\n");
+      }
+
+      // Fill text and pattern
+      pattern2[0][0] = 's';
+      pattern2[0][1] = 'k';
+      pattern2[0][2] = 'y';
+      pattern2[0][3] = 'p';
+      pattern2[0][4] = 'e';
+
+      pattern2[1][0] = 'o';
+      pattern2[1][1] = 's';
+      pattern2[1][2] = 'o';
+      pattern2[1][3] = 'f';
+      pattern2[1][4] = 't';
+
+      if ( n2 < it.mPayload.end() - it.mPayload.begin()) {
+        cout << "ERRRORRRRRR" << endl;
+        break;
+      }
+
+      for (int i = 0; i < n2; i++) {
+          if (text2[i] < 0 || text2[i] >= alphabet2) {
+          cout << "ERRRORRRRRR22222" << endl;
+          break;
+        }
+      }
+
+			//strncpy(text2, it.mPayload.c_str(), n2 - 1);
+			std::copy( it.mPayload.begin(), it.mPayload.end(), text2 );
+      text2[n2 - 1] = '\0';
+
+      int matches = multiac(pattern2, m2, text2, n2, p_size2, alphabet2);
+      if (matches > 0) {
+        cout << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", " << "Antonis" << endl;
+      }
+
+      free(text2);
+
+      for (int i = 0; i < p_size2; i++) {
+        free(pattern2[i]);
+      }
+
+      free(pattern2);
+    }
+  }
   return 0;
 }
