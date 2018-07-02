@@ -46,6 +46,9 @@ struct Frame {
 };
 
 class Credentials {
+public:
+  Credentials(string source_ip, string username) :
+              mSource_ip(source_ip), mUsername(username){};
 	string mSource_ip;
 	string mUsername;
 };
@@ -263,13 +266,15 @@ int main(int argc, char** argv)
   free(pattern);
 
   vector<Credentials> credentialsVector;
+  credentialsVector.push_back(Credentials("160.40.51.245", "Antonis"));
+  credentialsVector.push_back(Credentials("160.40.51.244", "Giorgos"));
 
 
   // Deep packet inspection
   // For every packet in the payload
   cout << "Inspecting TCP packets with actual payload" << endl << endl;
 
-  cout << "Frame ID, Source IP, Destination IP, Username" << endl;
+  cout << "Alert type, Frame ID, Source IP, Destination IP, Username" << endl;
   for (auto& it : frameVector) {
     // Inspect only TCP packets with actual payload
     if (it.mProtocol == "TCP" && std::stod(it.mLength) > 96) {
@@ -298,7 +303,7 @@ int main(int argc, char** argv)
           printf("Failed to allocate array!\n");
       }
 
-      // Fill text and pattern
+      // Fill pattern only with possibly malicious patterns
       pattern2[0][0] = 's';
       pattern2[0][1] = 'k';
       pattern2[0][2] = 'y';
@@ -323,13 +328,12 @@ int main(int argc, char** argv)
         }
       }
 
-			//strncpy(text2, it.mPayload.c_str(), n2 - 1);
 			std::copy( it.mPayload.begin(), it.mPayload.end(), text2 );
       text2[n2 - 1] = '\0';
 
       int matches = multiac(pattern2, m2, text2, n2, p_size2, alphabet2);
       if (matches > 0) {
-        cout << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", " << "Antonis" << endl;
+        cout << "Attack detected, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", " << "Antonis" << endl;
       }
 
       free(text2);
