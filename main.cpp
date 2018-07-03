@@ -11,6 +11,8 @@ extern "C" {
 #include <string>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 using std::cout;
 using std::endl;
 using std::ifstream;
@@ -129,13 +131,23 @@ void csvParser(vector<Frame>& frameVector, const string& filename)
 
 int main(int argc, char** argv)
 {
+	// Parse network payload and store to frameVector
   vector<Frame> frameVector;
   csvParser(frameVector, "./charis2.csv");
 
+  // Parse configuration file with IPs and usernames
+  std::ifstream ifs("input.json");
+  nlohmann::json data;
+  ifs >> data;
+
+  // Store IPs/usernames to credentialsVector
   vector<Credentials> credentialsVector;
-  credentialsVector.push_back(Credentials("160.40.51.244", "Antonis"));
-  credentialsVector.push_back(Credentials("160.40.51.245", "Giorgos"));
-  credentialsVector.push_back(Credentials("160.40.51.246", "Dimitra"));
+  for (unsigned int i = 0; i < data["Credentials"].size(); i++ ) {
+    string ip = data["Credentials"][i]["IP"];
+    string username = data["Credentials"][i]["Username"];
+
+    credentialsVector.push_back(Credentials(ip, username));
+  }
 
   //Open output file for writing
   std::ofstream outFile("output.csv");
@@ -174,7 +186,7 @@ int main(int argc, char** argv)
           printf("Failed to allocate array!\n");
       }
 
-      // Fill pattern list with real usernames
+      // Copy credentialsVector to the pattern array
       for (int i = 0; i < p_size2; i++) {
         // Don't copy over though the username associated with the current source OR destination ip
         if (it.mSource_ip != credentialsVector.at(i).mSource_ip &&
