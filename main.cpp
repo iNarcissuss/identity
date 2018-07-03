@@ -130,18 +130,22 @@ void csvParser(vector<Frame>& frameVector, const string& filename)
 int main(int argc, char** argv)
 {
   vector<Frame> frameVector;
-  csvParser(frameVector, "../charis2.csv");
+  csvParser(frameVector, "./charis2.csv");
 
   vector<Credentials> credentialsVector;
   credentialsVector.push_back(Credentials("160.40.51.244", "Antonis"));
   credentialsVector.push_back(Credentials("160.40.51.245", "Giorgos"));
   credentialsVector.push_back(Credentials("160.40.51.246", "Dimitra"));
 
+  //Open output file for writing
+  std::ofstream outFile("output.csv");
+
   // Deep packet inspection
   // For every packet in the payload
   cout << "Inspecting TCP packets with actual payload" << endl << endl;
 
   cout << "Alert type, Frame ID, Source IP, Destination IP, Username, Frame location" << endl;
+  outFile << "Alert type, Frame ID, Source IP, Destination IP, Username, Frame location" << endl;
   for (auto& it : frameVector) {
     // Inspect only TCP packets with actual payload
     if (it.mProtocol == "TCP" && std::stod(it.mLength) > 96) {
@@ -199,6 +203,8 @@ int main(int argc, char** argv)
       if (results.matches > 0) {
         cout << "Identity spoofing attack, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", "
              << pattern2[results.pattern] << ", " << results.location << endl;
+        outFile << "Identity spoofing attack, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", "
+             << pattern2[results.pattern] << ", " << results.location << endl;
       }
 
       free(text2);
@@ -210,5 +216,8 @@ int main(int argc, char** argv)
       free(pattern2);
     }
   }
+  // Close output file
+  outFile.close();
+
   return 0;
 }
