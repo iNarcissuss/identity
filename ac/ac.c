@@ -167,7 +167,7 @@ void ac_addstring ( struct ac_table *g, unsigned int i, unsigned char *string, i
 	}
 }
 
-unsigned int search_ac ( unsigned char *text, int n, struct ac_table *table ) {
+struct Results search_ac ( unsigned char *text, int n, struct ac_table *table ) {
 
 	struct ac_state *head = table->zerostate;
 	struct ac_state *r, *s;
@@ -175,6 +175,9 @@ unsigned int search_ac ( unsigned char *text, int n, struct ac_table *table ) {
 	int column, matches = 0;
 
 	r = head;
+
+	struct Results results;
+	results.matches = 0;
 
 	for ( column = 0; column < n; column++ ) {
 
@@ -186,12 +189,14 @@ unsigned int search_ac ( unsigned char *text, int n, struct ac_table *table ) {
 		//printf("column %i r->id = %i text = %c\n", column, r->id, *( text + column ));
 
 		if ( r->output != NULL ) {
-			matches++;
-			printf("match of %i at %i\n", r->keywordline, column);
+			//printf("match of %i at %i\n", r->keywordline, column);
+			results.matches++;
+			results.pattern = r->keywordline;
+			results.location = column;
 		}
 	}
 
-	return matches;
+	return results;
 }
 
 struct ac_table *preproc_ac ( unsigned char **pattern, int m, int p_size, int alphabet ) {

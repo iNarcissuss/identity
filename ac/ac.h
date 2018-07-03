@@ -16,7 +16,13 @@ struct ac_table {
 };
 
 struct ac_table *preproc_ac ( unsigned char **pattern, int m, int p_size, int alphabet );
-unsigned int search_ac ( unsigned char *text, int n, struct ac_table *table );
+struct Results search_ac ( unsigned char *text, int n, struct ac_table *table );
 void free_ac ( struct ac_table *table, int alphabet );
+
+struct Results {
+  int matches;
+  int pattern;
+  int location;
+};
 
  #endif

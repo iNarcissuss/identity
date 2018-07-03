@@ -53,17 +53,15 @@ public:
 	string mUsername;
 };
 
-int multiac(unsigned char** pattern, int m, unsigned char* text, int n, int p_size, int alphabet)
+struct Results multiac(unsigned char** pattern, int m, unsigned char* text, int n, int p_size, int alphabet)
 {
   struct ac_table* table = preproc_ac(pattern, m, p_size, alphabet);
 
-  int matches = search_ac(text, n, table);
+  struct Results results = search_ac(text, n, table);
 
   free_ac(table, alphabet);
 
-  //printf("search_ac matches \t%i\n", matches);
-
-  return matches;
+  return results;
 }
 
 void csvParser(vector<Frame>& frameVector, const string& filename)
@@ -135,18 +133,19 @@ int main(int argc, char** argv)
   csvParser(frameVector, "../charis2.csv");
 
   vector<Credentials> credentialsVector;
-  credentialsVector.push_back(Credentials("160.40.51.245", "skype"));
-  credentialsVector.push_back(Credentials("160.40.51.244", "osoft"));
+  credentialsVector.push_back(Credentials("160.40.51.244", "Antonis"));
+  credentialsVector.push_back(Credentials("160.40.51.245", "Giorgos"));
+  credentialsVector.push_back(Credentials("160.40.51.246", "Dimitra"));
 
   // Deep packet inspection
   // For every packet in the payload
   cout << "Inspecting TCP packets with actual payload" << endl << endl;
 
-  cout << "Alert type, Frame ID, Source IP, Destination IP, Username" << endl;
+  cout << "Alert type, Frame ID, Source IP, Destination IP, Username, Frame location" << endl;
   for (auto& it : frameVector) {
     // Inspect only TCP packets with actual payload
     if (it.mProtocol == "TCP" && std::stod(it.mLength) > 96) {
-      const int m2 = 5;
+      const int m2 = 7;
       const int alphabet2 = 256;
       const int n2 = it.mPayload.length();
       const int p_size2 = 2;
@@ -196,9 +195,10 @@ int main(int argc, char** argv)
 			std::copy( it.mPayload.begin(), it.mPayload.end(), text2 );
       text2[n2 - 1] = '\0';
 
-      int matches = multiac(pattern2, m2, text2, n2, p_size2, alphabet2);
-      if (matches > 0) {
-        cout << "Attack detected, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << endl;
+      struct Results results = multiac(pattern2, m2, text2, n2, p_size2, alphabet2);
+      if (results.matches > 0) {
+        cout << "Identity spoofing attack, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", "
+             << pattern2[results.pattern] << ", " << results.location << endl;
       }
 
       free(text2);
