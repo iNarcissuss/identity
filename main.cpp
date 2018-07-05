@@ -12,6 +12,13 @@ extern "C" {
 #include <vector>
 
 #include <nlohmann/json.hpp>
+#include <arpa/inet.h>
+#include <pcapplusplus/PcapFileDevice.h>
+#include <pcapplusplus/Packet.h>
+#include <pcapplusplus/EthLayer.h>
+#include <pcapplusplus/IPv4Layer.h>
+#include <pcapplusplus/TcpLayer.h>
+#include <pcapplusplus/HttpLayer.h>
 
 using std::cout;
 using std::endl;
@@ -129,6 +136,28 @@ void csvParser(vector<Frame>& frameVector, const string& filename)
   cout << "Average payload size of all TCP packets: " << size / tcpCounter << " bytes" << endl;
 }
 
+std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType)
+{
+	switch (protocolType)
+	{
+	case pcpp::Ethernet:
+		return "Ethernet";
+	case pcpp::IPv4:
+		return "IPv4";
+	case pcpp::TCP:
+		return "TCP";
+	case pcpp::UDP:
+		return "UDP";
+	case pcpp::ARP:
+		return "ARP";
+	case pcpp::HTTPRequest:
+	case pcpp::HTTPResponse:
+		return "HTTP";
+	default:
+		return "Unknown";
+	}
+}
+
 int main(int argc, char** argv)
 {
 	// Parse network payload and store to frameVector
@@ -230,6 +259,57 @@ int main(int argc, char** argv)
   }
   // Close output file
   outFile.close();
+
+  pcpp::IFileReaderDevice* reader = pcpp::IFileReaderDevice::getReader("capture2.pcap");
+
+  // verify that a reader interface was indeed created
+  if (reader == NULL) {
+	  cout << "Cannot determine pcap reader for file type" << endl;
+	  exit(1);
+  }
+
+  // open the reader for reading
+  if (!reader->open()) {
+    printf("Cannot open pcap file for reading\n");
+    exit(1);
+  }
+
+  pcpp::RawPacket rawPacket;
+	if (!reader->getNextPacket(rawPacket)) {
+		printf("Couldn't read the first packet in the file\n");
+		exit(1);
+	}
+
+	// close the file reader, we don't need it anymore
+	reader->close();
+
+	// parse the raw packet into a parsed packet
+	pcpp::Packet parsedPacket(&rawPacket);
+
+	// first let's go over the layers one by one and find out its type, its total length, its header length and its payload length
+	for (pcpp::Layer* curLayer = parsedPacket.getFirstLayer(); curLayer != NULL; curLayer = curLayer->getNextLayer())
+	{
+		printf("Layer type: %s; Total data: %d [bytes]; Layer data: %d [bytes]; Layer payload: %d [bytes]\n",
+				getProtocolTypeAsString(curLayer->getProtocol()).c_str(), // get layer type
+				(int)curLayer->getDataLen(),                              // get total length of the layer
+				(int)curLayer->getHeaderLen(),                            // get the header length of the layer
+				(int)curLayer->getLayerPayloadSize());                    // get the payload length of the layer (equals total length minus header length)
+	}
+
+	pcpp::IPv4Layer* ipLayer = parsedPacket.getLayerOfType<pcpp::IPv4Layer>();
+	if (ipLayer == NULL) {
+		printf("Something went wrong, couldn't find IPv4 layer\n");
+	} else {
+		printf("\nSource IP address: %s\n", ipLayer->getSrcIpAddress().toString().c_str());
+		printf("Destination IP address: %s\n", ipLayer->getDstIpAddress().toString().c_str());
+		printf("IP ID: 0x%X\n", ntohs(ipLayer->getIPv4Header()->ipId));
+		printf("TTL: %d\n", ipLayer->getIPv4Header()->timeToLive);
+	}
+
+	pcpp::TcpLayer* tcpLayer = parsedPacket.getLayerOfType<pcpp::TcpLayer>();
+	if (tcpLayer == NULL) {
+		printf("Something went wrong, couldn't find TCP layer\n");
+	}
 
   return 0;
 }

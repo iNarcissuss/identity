@@ -14,6 +14,8 @@ project(Fortika)
 
 set(sources main.cpp ac/ac.c)
 
+include(FindPCAP.cmake)
+
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 
 ###############################################################################
@@ -29,6 +31,6 @@ add_executable(smatcher ${sources} ${data})
 target_compile_options(smatcher PUBLIC -g -O0 -std=c++14 -Wall -pthread)
 
 # This allows to include files relative to the root of the src directory with a <> pair
-target_include_directories(smatcher PUBLIC include/)
+target_include_directories(smatcher PUBLIC include/ /usr/local/include/pcapplusplus/)
 
-target_link_libraries(smatcher)
+target_link_libraries(smatcher ${PCAP_LIBRARY} -lPcap++ -lPacket++ -lCommon++ -lpcap)
