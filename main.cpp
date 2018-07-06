@@ -1,5 +1,6 @@
 #include "Output.h"
 #include "Parser.h"
+#include "Timer.h"
 
 extern "C" {
 #include "ac/ac.h"
@@ -58,13 +59,6 @@ int main(int argc, char** argv)
   } else {
     pcapFilename = "capture.pcap";
   }
-  // Parse network payload and store to frameVector
-  // vector<Frame> frameVector;
-  // csvParser(frameVector, "./charis2.csv");
-
-  vector<Frame> frameVector2;
-  Parser parser;
-  parser.pcap(frameVector2, pcapFilename);
 
   // Parse configuration file with IPs and usernames
   std::ifstream ifs("input.json");
@@ -80,6 +74,16 @@ int main(int argc, char** argv)
     credentialsVector.push_back(Credentials(ip, username));
   }
 
+  Timer timer(true);
+
+  // Parse network payload and store to frameVector
+  // vector<Frame> frameVector;
+  // csvParser(frameVector, "./charis2.csv");
+
+  vector<Frame> frameVector2;
+  Parser parser;
+  parser.pcap(frameVector2, pcapFilename);
+
   // Open output file for writing
   std::ofstream outFile("output.csv");
   nlohmann::json outputData;
@@ -89,8 +93,8 @@ int main(int argc, char** argv)
   // For every packet in the payload
   cout << "Inspecting TCP packets with actual payload" << endl << endl;
 
-  cout << "Alert type, Frame ID, Source IP, Destination IP, Username, Frame location" << endl;
-  outFile << "Alert type, Frame ID, Source IP, Destination IP, Username, Frame location" << endl;
+  cout << "Alert type,Frame ID,Timestamp,Source IP,Destination IP,Username,Frame location" << endl;
+  outFile << "Alert type,Frame ID,Timestamp,Source IP,Destination IP,Username,Frame location" << endl;
   for (auto& it : frameVector2) {
     // Inspect only TCP packets with actual payload
     if (it.mProtocol == "TCP" && it.mPayload.length() > 0) {
@@ -133,11 +137,11 @@ int main(int argc, char** argv)
 
       struct Results results = multiac(pattern, m, text, n, p_size, alphabet);
       if (results.matches > 0) {
-        cout << "Identity spoofing attack, " << it.mId << ", " << it.mTimestamp << ", " << it.mSource_ip << ", "
-             << it.mDest_ip << ", " << pattern[results.pattern] << ", " << results.location << endl;
+        cout << "Identity spoofing attack," << it.mId << "," << it.mTimestamp << "," << it.mSource_ip << ","
+             << it.mDest_ip << "," << pattern[results.pattern] << "," << results.location << endl;
 
-        outFile << "Identity spoofing attack, " << it.mId << ", " << it.mTimestamp << ", " << it.mSource_ip << ", "
-                << it.mDest_ip << ", " << pattern[results.pattern] << ", " << results.location << endl;
+        outFile << "Identity spoofing attack," << it.mId << "," << it.mTimestamp << "," << it.mSource_ip << ","
+                << it.mDest_ip << "," << pattern[results.pattern] << "," << results.location << endl;
 
         outputData["Activity"][outputDataCounter]["Alert type"] = "Identity spoofing attack";
         outputData["Activity"][outputDataCounter]["Source IP"] = it.mSource_ip;
@@ -159,6 +163,8 @@ int main(int argc, char** argv)
   // Close output file
   outFile.close();
   Output::storeJSON<nlohmann::json>(outputData);
+
+  std::cout << "Elapsed time: " << std::fixed << timer << "ms\n";
 
   // for (auto& it : frameVector) {
   // 	cout << it.mId << " " << it.mProtocol << " " << it.mSource_ip << " " << it.mSource_port << " " << it.mDest_ip << "
