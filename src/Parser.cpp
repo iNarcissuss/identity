@@ -3,8 +3,10 @@
 #include <iostream>
 #include <sstream>
 
-#include <nlohmann/json.hpp>
 #include <arpa/inet.h>
+#include <sys/time.h>
+
+#include <nlohmann/json.hpp>
 
 using std::cout;
 using std::endl;
@@ -79,7 +81,8 @@ void Parser::pcap(vector<Frame>& frameVector, const string& filename)
   // Parse all packets in pcap file
   unsigned int packetCounter = 0;
   while(1) {
-    // cout << "Packet " << packetCounter << endl;
+    // Create new frame
+    Frame frame(std::to_string(packetCounter++));
 
     pcpp::RawPacket rawPacket;
     // Break the loop when a next file could not be found
@@ -87,9 +90,17 @@ void Parser::pcap(vector<Frame>& frameVector, const string& filename)
       break;
     }
 
-    // Create new frame
-    Frame frame(std::to_string(packetCounter));
-    packetCounter++;
+    // Retrieve raw packet timestamp and convert to a human readable format
+    timeval tv = rawPacket.getPacketTimeStamp();
+    time_t nowtime;
+    nowtime = tv.tv_usec;
+    int milli = tv.tv_usec / 1000;
+    char buffer [80];
+    strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&tv.tv_sec));
+
+    char currentTime[84] = "";
+    sprintf(currentTime, "%s:%d", buffer, milli);
+    frame.mTimestamp = string(currentTime);
 
     // parse the raw packet into a parsed packet
     pcpp::Packet parsedPacket(&rawPacket);

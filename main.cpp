@@ -137,14 +137,16 @@ int main(int argc, char** argv)
 
       struct Results results = multiac(pattern, m, text, n, p_size, alphabet);
       if (results.matches > 0) {
-        cout << "Identity spoofing attack, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", "
-             << pattern[results.pattern] << ", " << results.location << endl;
-        outFile << "Identity spoofing attack, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", "
-             << pattern[results.pattern] << ", " << results.location << endl;
+        cout << "Identity spoofing attack, " << it.mId << ", " << it.mTimestamp << ", " << it.mSource_ip << ", "
+             << it.mDest_ip << ", " << pattern[results.pattern] << ", " << results.location << endl;
+
+        outFile << "Identity spoofing attack, " << it.mId << ", " << it.mTimestamp << ", " << it.mSource_ip << ", "
+                << it.mDest_ip << ", " << pattern[results.pattern] << ", " << results.location << endl;
+
         outputData["Activity"][outputDataCounter]["Alert type"] = "Identity spoofing attack";
         outputData["Activity"][outputDataCounter]["Source IP"] = it.mSource_ip;
         outputData["Activity"][outputDataCounter]["Destination IP"] = it.mDest_ip;
-        //outputData["Activity"][outputDataCounter]["Username"] = pattern[results.pattern];
+        outputData["Activity"][outputDataCounter]["Timestamp"] = it.mTimestamp;
         outputDataCounter++;
       }
 
