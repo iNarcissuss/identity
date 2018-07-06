@@ -64,8 +64,6 @@ struct Frame {
   string mPayload = "";
 
   unsigned int mTotalLength = 0;
-  unsigned int mHeaderLength;
-  unsigned int mPayloadLength;
 };
 
 class Credentials {
@@ -347,7 +345,6 @@ void csvParser(vector<Frame>& frameVector, const string& filename)
       size += i.mPayload.length();
     }
   }
-
   cout << "Average payload size of all TCP packets: " << size / tcpCounter << " bytes" << endl;
 }
 
@@ -403,76 +400,65 @@ int main(int argc, char** argv)
   for (auto& it : frameVector2) {
     // Inspect only TCP packets with actual payload
     if (it.mProtocol == "TCP" && it.mPayload.length() > 0) {
-      const int m2 = 7;
-      const int alphabet2 = 256;
-      const int n2 = it.mPayload.length();
-      const int p_size2 = 2;
+      const int m = 7;
+      const int alphabet = 256;
+      const int n = it.mPayload.length();
+      const int p_size = inputData["Credentials"].size();
 
       // Allocate text and pattern
-      unsigned char* text2 = (unsigned char*)malloc(sizeof(unsigned char) * n2);
+      unsigned char* text = (unsigned char*)malloc(sizeof(unsigned char) * n);
 
-      if (text2 == NULL) {
+      if (text == NULL) {
         printf("Failed to allocate array\n");
       }
 
-      unsigned char** pattern2 = (unsigned char**)malloc(p_size2 * sizeof(unsigned char*));
+      unsigned char** pattern = (unsigned char**)malloc(p_size * sizeof(unsigned char*));
 
-      if (pattern2 == NULL) {
+      if (pattern == NULL) {
         printf("Failed to allocate array!\n");
       }
 
-      for (int i = 0; i < p_size2; i++) {
-        pattern2[i] = (unsigned char*)malloc(m2 * sizeof(unsigned char));
+      for (int i = 0; i < p_size; i++) {
+        pattern[i] = (unsigned char*)malloc(m * sizeof(unsigned char));
 
-        if (pattern2[i] == NULL)
+        if (pattern[i] == NULL)
           printf("Failed to allocate array!\n");
       }
 
-      // Copy credentialsVector to the pattern array
-      for (int i = 0; i < p_size2; i++) {
+      // Copy credentialsVector to the pattern array and pass them to the C algorithm
+      for (int i = 0; i < p_size; i++) {
         // Don't copy over though the username associated with the current source OR destination ip
         if (it.mSource_ip != credentialsVector.at(i).mSource_ip &&
             it.mDest_ip != credentialsVector.at(i).mSource_ip) {
-          std::copy (credentialsVector.at(i).mUsername.begin(), credentialsVector.at(i).mUsername.end(), pattern2[i]);
-          pattern2[i][m2] = '\0';
+          std::copy (credentialsVector.at(i).mUsername.begin(), credentialsVector.at(i).mUsername.end(), pattern[i]);
+          pattern[i][m] = '\0';
         }
       }
 
-      if ( n2 < it.mPayload.end() - it.mPayload.begin()) {
-        cout << "ERRRORRRRRR" << endl;
-        break;
-      }
+			std::copy( it.mPayload.begin(), it.mPayload.end(), text );
+      text[n - 1] = '\0';
 
-      for (int i = 0; i < n2; i++) {
-          if (text2[i] < 0 || text2[i] >= alphabet2) {
-          cout << "ERRRORRRRRR22222" << endl;
-          break;
-        }
-      }
-
-			std::copy( it.mPayload.begin(), it.mPayload.end(), text2 );
-      text2[n2 - 1] = '\0';
-
-      struct Results results = multiac(pattern2, m2, text2, n2, p_size2, alphabet2);
+      struct Results results = multiac(pattern, m, text, n, p_size, alphabet);
       if (results.matches > 0) {
         cout << "Identity spoofing attack, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", "
-             << pattern2[results.pattern] << ", " << results.location << endl;
+             << pattern[results.pattern] << ", " << results.location << endl;
         outFile << "Identity spoofing attack, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", "
-             << pattern2[results.pattern] << ", " << results.location << endl;
+             << pattern[results.pattern] << ", " << results.location << endl;
         outputData["Activity"][outputDataCounter]["Alert type"] = "Identity spoofing attack";
         outputData["Activity"][outputDataCounter]["Source IP"] = it.mSource_ip;
         outputData["Activity"][outputDataCounter]["Destination IP"] = it.mDest_ip;
-        //outputData["Activity"][outputDataCounter]["Username"] = pattern2[results.pattern];
+        //outputData["Activity"][outputDataCounter]["Username"] = pattern[results.pattern];
         outputDataCounter++;
       }
 
-      free(text2);
+      // Free pattern and text arrays
+      free(text);
 
-      for (int i = 0; i < p_size2; i++) {
-        free(pattern2[i]);
+      for (int i = 0; i < p_size; i++) {
+        free(pattern[i]);
       }
 
-      free(pattern2);
+      free(pattern);
     }
   }
   // Close output file
