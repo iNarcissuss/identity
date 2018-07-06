@@ -5,24 +5,23 @@
 #include <string>
 #include <vector>
 
-#include <pcapplusplus/PcapFileDevice.h>
-#include <pcapplusplus/Packet.h>
 #include <pcapplusplus/ArpLayer.h>
 #include <pcapplusplus/DnsLayer.h>
 #include <pcapplusplus/EthLayer.h>
-#include <pcapplusplus/IcmpLayer.h>
+#include <pcapplusplus/HttpLayer.h>
 #include <pcapplusplus/IPv4Layer.h>
+#include <pcapplusplus/IcmpLayer.h>
+#include <pcapplusplus/Packet.h>
+#include <pcapplusplus/PayloadLayer.h>
+#include <pcapplusplus/PcapFileDevice.h>
 #include <pcapplusplus/TcpLayer.h>
 #include <pcapplusplus/UdpLayer.h>
-#include <pcapplusplus/HttpLayer.h>
-#include <pcapplusplus/PayloadLayer.h>
 
 using std::string;
 using std::vector;
 
 struct Frame {
-  Frame(string id)
-    : mId(id){};
+  Frame(string id) : mId(id){};
 
   Frame(string id, string timestamp, string source_ip, string source_mac, string dest_ip, string dest_mac,
         string length, string protocol, string source_port, string dest_port, string payload)
@@ -54,17 +53,15 @@ struct Frame {
 
 class Parser
 {
-public:
+ public:
   Parser();
 
   void pcap(vector<Frame>& frameVector, const string& filename);
 
   void csv(vector<Frame>& frameVector, const string& filename);
 
-private:
-
+ private:
   std::string getProtocolTypeAsString(pcpp::ProtocolType protocolType);
 
   std::string printTcpFlags(pcpp::TcpLayer* tcpLayer);
-
 };

@@ -14,28 +14,26 @@ using std::ifstream;
 using std::stringstream;
 
 Parser::Parser() {}
-
 std::string Parser::getProtocolTypeAsString(pcpp::ProtocolType protocolType)
 {
-  switch (protocolType)
-  {
-  case pcpp::Ethernet:
-    return "Ethernet";
-  case pcpp::IPv4:
-    return "IPv4";
-  case pcpp::TCP:
-    return "TCP";
-  case pcpp::UDP:
-    return "UDP";
-  case pcpp::ARP:
-    return "ARP";
-  case pcpp::DNS:
-    return "DNS";
-  case pcpp::HTTPRequest:
-  case pcpp::HTTPResponse:
-    return "HTTP";
-  default:
-    return "Unknown";
+  switch (protocolType) {
+    case pcpp::Ethernet:
+      return "Ethernet";
+    case pcpp::IPv4:
+      return "IPv4";
+    case pcpp::TCP:
+      return "TCP";
+    case pcpp::UDP:
+      return "UDP";
+    case pcpp::ARP:
+      return "ARP";
+    case pcpp::DNS:
+      return "DNS";
+    case pcpp::HTTPRequest:
+    case pcpp::HTTPResponse:
+      return "HTTP";
+    default:
+      return "Unknown";
   }
 }
 
@@ -80,7 +78,7 @@ void Parser::pcap(vector<Frame>& frameVector, const string& filename)
 
   // Parse all packets in pcap file
   unsigned int packetCounter = 0;
-  while(1) {
+  while (1) {
     // Create new frame
     Frame frame(std::to_string(packetCounter++));
 
@@ -95,7 +93,7 @@ void Parser::pcap(vector<Frame>& frameVector, const string& filename)
     time_t nowtime;
     nowtime = tv.tv_usec;
     int milli = tv.tv_usec / 1000;
-    char buffer [80];
+    char buffer[80];
     strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&tv.tv_sec));
 
     char currentTime[84] = "";
@@ -105,14 +103,17 @@ void Parser::pcap(vector<Frame>& frameVector, const string& filename)
     // parse the raw packet into a parsed packet
     pcpp::Packet parsedPacket(&rawPacket);
 
-    // first let's go over the layers one by one and find out its type, its total length, its header length and its payload length
+    // first let's go over the layers one by one and find out its type, its total length, its header length and its
+    // payload length
     for (pcpp::Layer* curLayer = parsedPacket.getFirstLayer(); curLayer != NULL; curLayer = curLayer->getNextLayer()) {
-      // printf("%i] Layer type: %s %i; Total data: %d [bytes]; Layer data: %d [bytes]; Layer payload: %d [bytes]\n", packetCounter,
+      // printf("%i] Layer type: %s %i; Total data: %d [bytes]; Layer data: %d [bytes]; Layer payload: %d [bytes]\n",
+      // packetCounter,
       //    getProtocolTypeAsString(curLayer->getProtocol()).c_str(), // get layer type
       //    curLayer->getProtocol(),
       //    (int)curLayer->getDataLen(),                              // get total length of the layer
       //    (int)curLayer->getHeaderLen(),                            // get the header length of the layer
-      //    (int)curLayer->getLayerPayloadSize());                    // get the payload length of the layer (equals total length minus header length)
+      //    (int)curLayer->getLayerPayloadSize());                    // get the payload length of the layer (equals
+      //    total length minus header length)
 
       frame.mTotalLength += (int)curLayer->getDataLen();
     }
@@ -169,7 +170,7 @@ void Parser::pcap(vector<Frame>& frameVector, const string& filename)
 
     pcpp::PayloadLayer* payloadLayer = parsedPacket.getLayerOfType<pcpp::PayloadLayer>();
     if (payloadLayer != NULL) {
-      //cout << "Payload: " << payloadLayer->getPayloadLen() << " " << payloadLayer->getPayload() << endl;
+      // cout << "Payload: " << payloadLayer->getPayloadLen() << " " << payloadLayer->getPayload() << endl;
       uint8_t payloadArray[payloadLayer->getPayloadLen()];
 
       std::ostringstream convert;

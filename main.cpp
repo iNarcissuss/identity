@@ -18,12 +18,12 @@ using std::vector;
 
 namespace po = boost::program_options;
 
-class Credentials {
-public:
-  Credentials(string source_ip, string username) :
-              mSource_ip(source_ip), mUsername(username){};
-	string mSource_ip;
-	string mUsername;
+class Credentials
+{
+ public:
+  Credentials(string source_ip, string username) : mSource_ip(source_ip), mUsername(username){};
+  string mSource_ip;
+  string mUsername;
 };
 
 struct Results multiac(unsigned char** pattern, int m, unsigned char* text, int n, int p_size, int alphabet)
@@ -39,29 +39,26 @@ struct Results multiac(unsigned char** pattern, int m, unsigned char* text, int 
 
 int main(int argc, char** argv)
 {
-	// Command line options parsing
-	po::options_description description("Allowed options");
-	description.add_options()
-	    ("help", "This help message")
-	    ("pcap", po::value<string>(), "Set the input PCAP filename")
-	;
+  // Command line options parsing
+  po::options_description description("Allowed options");
+  description.add_options()("help", "This help message")("pcap", po::value<string>(), "Set the input PCAP filename");
 
-	po::variables_map args;
-	po::store (po::command_line_parser (argc, argv).options(description).run(), args);
-  po::notify (args);
+  po::variables_map args;
+  po::store(po::command_line_parser(argc, argv).options(description).run(), args);
+  po::notify(args);
 
-	if (args.count("help")) {
-	    cout << description << "\n";
-	    return 1;
-	}
+  if (args.count("help")) {
+    cout << description << "\n";
+    return 1;
+  }
 
-	string pcapFilename;
-	if (args.count("pcap")) {
-		pcapFilename = args["pcap"].as<string>();
-	} else {
-	    pcapFilename = "capture.pcap";
-	}
-	// Parse network payload and store to frameVector
+  string pcapFilename;
+  if (args.count("pcap")) {
+    pcapFilename = args["pcap"].as<string>();
+  } else {
+    pcapFilename = "capture.pcap";
+  }
+  // Parse network payload and store to frameVector
   // vector<Frame> frameVector;
   // csvParser(frameVector, "./charis2.csv");
 
@@ -76,14 +73,14 @@ int main(int argc, char** argv)
 
   // Store IPs/usernames to credentialsVector
   vector<Credentials> credentialsVector;
-  for (unsigned int i = 0; i < inputData["Credentials"].size(); i++ ) {
+  for (unsigned int i = 0; i < inputData["Credentials"].size(); i++) {
     string ip = inputData["Credentials"][i]["IP"];
     string username = inputData["Credentials"][i]["Username"];
 
     credentialsVector.push_back(Credentials(ip, username));
   }
 
-  //Open output file for writing
+  // Open output file for writing
   std::ofstream outFile("output.csv");
   nlohmann::json outputData;
   int outputDataCounter = 0;
@@ -125,14 +122,13 @@ int main(int argc, char** argv)
       // Copy credentialsVector to the pattern array and pass them to the C algorithm
       for (int i = 0; i < p_size; i++) {
         // Don't copy over though the username associated with the current source OR destination ip
-        if (it.mSource_ip != credentialsVector.at(i).mSource_ip &&
-            it.mDest_ip != credentialsVector.at(i).mSource_ip) {
-          std::copy (credentialsVector.at(i).mUsername.begin(), credentialsVector.at(i).mUsername.end(), pattern[i]);
+        if (it.mSource_ip != credentialsVector.at(i).mSource_ip && it.mDest_ip != credentialsVector.at(i).mSource_ip) {
+          std::copy(credentialsVector.at(i).mUsername.begin(), credentialsVector.at(i).mUsername.end(), pattern[i]);
           pattern[i][m] = '\0';
         }
       }
 
-			std::copy( it.mPayload.begin(), it.mPayload.end(), text );
+      std::copy(it.mPayload.begin(), it.mPayload.end(), text);
       text[n - 1] = '\0';
 
       struct Results results = multiac(pattern, m, text, n, p_size, alphabet);
@@ -165,12 +161,14 @@ int main(int argc, char** argv)
   Output::storeJSON<nlohmann::json>(outputData);
 
   // for (auto& it : frameVector) {
-  // 	cout << it.mId << " " << it.mProtocol << " " << it.mSource_ip << " " << it.mSource_port << " " << it.mDest_ip << " " << it.mDest_port << " " << it.mPayload << endl << endl;
+  // 	cout << it.mId << " " << it.mProtocol << " " << it.mSource_ip << " " << it.mSource_port << " " << it.mDest_ip << "
+  // " << it.mDest_port << " " << it.mPayload << endl << endl;
   // 	if (it.mId == "1270") break;
   // }
 
   // for (auto& it : frameVector2) {
-  // 	if(it.mProtocol == "TCP")cout << it.mId << " " << it.mProtocol << " " << it.mSource_ip << " " << it.mSource_port << " " << it.mDest_ip << " " << it.mDest_port << " " << it.mPayload << endl << endl;
+  // 	if(it.mProtocol == "TCP")cout << it.mId << " " << it.mProtocol << " " << it.mSource_ip << " " << it.mSource_port
+  // << " " << it.mDest_ip << " " << it.mDest_port << " " << it.mPayload << endl << endl;
   // }
 
   return 0;
