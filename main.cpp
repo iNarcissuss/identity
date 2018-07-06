@@ -8,12 +8,15 @@ extern "C" {
 #include <string>
 #include <vector>
 
+#include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
 
 using std::cout;
 using std::endl;
 using std::string;
 using std::vector;
+
+namespace po = boost::program_options;
 
 class Credentials {
 public:
@@ -36,13 +39,35 @@ struct Results multiac(unsigned char** pattern, int m, unsigned char* text, int 
 
 int main(int argc, char** argv)
 {
+	// Command line options parsing
+	po::options_description description("Allowed options");
+	description.add_options()
+	    ("help", "This help message")
+	    ("pcap", po::value<string>(), "Set the input PCAP filename")
+	;
+
+	po::variables_map args;
+	po::store (po::command_line_parser (argc, argv).options(description).run(), args);
+  po::notify (args);
+
+	if (args.count("help")) {
+	    cout << description << "\n";
+	    return 1;
+	}
+
+	string pcapFilename;
+	if (args.count("pcap")) {
+		pcapFilename = args["pcap"].as<string>();
+	} else {
+	    pcapFilename = "capture.pcap";
+	}
 	// Parse network payload and store to frameVector
   // vector<Frame> frameVector;
   // csvParser(frameVector, "./charis2.csv");
 
   vector<Frame> frameVector2;
   Parser parser;
-  parser.pcap(frameVector2, "capture.pcap");
+  parser.pcap(frameVector2, pcapFilename);
 
   // Parse configuration file with IPs and usernames
   std::ifstream ifs("input.json");
