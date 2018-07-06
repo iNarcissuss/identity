@@ -90,15 +90,19 @@ void Parser::pcap(vector<Frame>& frameVector, const string& filename)
 
     // Retrieve raw packet timestamp and convert to a human readable format
     timeval tv = rawPacket.getPacketTimeStamp();
-    time_t nowtime;
-    nowtime = tv.tv_usec;
-    int milli = tv.tv_usec / 1000;
-    char buffer[80];
-    strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&tv.tv_sec));
-
-    char currentTime[84] = "";
-    sprintf(currentTime, "%s:%d", buffer, milli);
-    frame.mTimestamp = string(currentTime);
+    stringstream ss;
+    ss << tv.tv_sec;
+    ss << '.';
+    ss << tv.tv_usec;
+    // cout << tv.tv_sec << '.' << tv.tv_usec << endl;
+    // time_t nowtime;
+    // nowtime = tv.tv_usec;
+    // int milli = tv.tv_usec / 1000;
+    // char buffer[80];
+    // strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&tv.tv_sec));
+    // char currentTime[84] = "";
+    // sprintf(currentTime, "%s:%d", buffer, milli);
+    frame.mTimestamp = ss.str();
 
     // parse the raw packet into a parsed packet
     pcpp::Packet parsedPacket(&rawPacket);
