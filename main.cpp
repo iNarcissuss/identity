@@ -351,6 +351,21 @@ void csvParser(vector<Frame>& frameVector, const string& filename)
   cout << "Average payload size of all TCP packets: " << size / tcpCounter << " bytes" << endl;
 }
 
+/// Stores the JSON structure in <data> locally
+template <typename T>
+static void storeJSON(const T& data)
+{
+  std::string filename ="output.json";
+  std::ofstream fileOutput(filename);
+  if (!fileOutput) {
+    cout << "Cannot create file: "  << filename << endl;
+  }
+  cout << "Saving the output in the file: "  << filename << endl;
+
+  fileOutput << std::setw(2) << data << std::endl;
+  fileOutput.close();
+}
+
 int main(int argc, char** argv)
 {
 	// Parse network payload and store to frameVector
@@ -362,20 +377,22 @@ int main(int argc, char** argv)
 
   // Parse configuration file with IPs and usernames
   std::ifstream ifs("input.json");
-  nlohmann::json data;
-  ifs >> data;
+  nlohmann::json inputData;
+  ifs >> inputData;
 
   // Store IPs/usernames to credentialsVector
   vector<Credentials> credentialsVector;
-  for (unsigned int i = 0; i < data["Credentials"].size(); i++ ) {
-    string ip = data["Credentials"][i]["IP"];
-    string username = data["Credentials"][i]["Username"];
+  for (unsigned int i = 0; i < inputData["Credentials"].size(); i++ ) {
+    string ip = inputData["Credentials"][i]["IP"];
+    string username = inputData["Credentials"][i]["Username"];
 
     credentialsVector.push_back(Credentials(ip, username));
   }
 
   //Open output file for writing
   std::ofstream outFile("output.csv");
+  nlohmann::json outputData;
+  int outputDataCounter = 0;
 
   // Deep packet inspection
   // For every packet in the payload
@@ -442,6 +459,11 @@ int main(int argc, char** argv)
              << pattern2[results.pattern] << ", " << results.location << endl;
         outFile << "Identity spoofing attack, " << it.mId << ", " << it.mSource_ip << ", " << it.mDest_ip << ", "
              << pattern2[results.pattern] << ", " << results.location << endl;
+        outputData["Activity"][outputDataCounter]["Alert type"] = "Identity spoofing attack";
+        outputData["Activity"][outputDataCounter]["Source IP"] = it.mSource_ip;
+        outputData["Activity"][outputDataCounter]["Destination IP"] = it.mDest_ip;
+        //outputData["Activity"][outputDataCounter]["Username"] = pattern2[results.pattern];
+        outputDataCounter++;
       }
 
       free(text2);
@@ -455,6 +477,7 @@ int main(int argc, char** argv)
   }
   // Close output file
   outFile.close();
+  storeJSON<nlohmann::json>(outputData);
 
   // for (auto& it : frameVector) {
   // 	cout << it.mId << " " << it.mProtocol << " " << it.mSource_ip << " " << it.mSource_port << " " << it.mDest_ip << " " << it.mDest_port << " " << it.mPayload << endl << endl;
